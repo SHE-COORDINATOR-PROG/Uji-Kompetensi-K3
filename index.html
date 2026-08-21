@@ -58,14 +58,13 @@ a{color:inherit;}
   position:sticky;top:0;height:100vh;
 }
 .brand{padding:0 20px 20px;border-bottom:1px solid var(--steel);margin-bottom:14px;}
-.brand .mark{
-  display:inline-flex;align-items:center;justify-content:center;
-  width:34px;height:34px;background:var(--amber);color:#1a1305;
-  font-family:var(--font-display);font-weight:800;font-size:18px;border-radius:6px;
-  transform:rotate(-3deg);
+.brand-logos{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.brand-logos .logo-box{
+  width:44px;height:44px;flex:none;background:#fff;border-radius:8px;
+  display:flex;align-items:center;justify-content:center;padding:4px;
+  box-shadow:0 1px 3px rgba(0,0,0,.35);
 }
-.brand .name{font-family:var(--font-display);font-weight:700;font-size:22px;letter-spacing:.04em;margin-top:10px;text-transform:uppercase;}
-.brand .tag{font-size:10.5px;color:var(--text-muted);letter-spacing:.14em;text-transform:uppercase;margin-top:2px;}
+.brand-logos .logo-box img{max-width:100%;max-height:100%;object-fit:contain;display:block;}
 .hazard-rule{height:6px;background:repeating-linear-gradient(135deg,var(--amber) 0 10px,#1a1305 10px 20px);opacity:.85;}
 .nav{display:flex;flex-direction:column;gap:2px;padding:14px 12px;}
 .nav button{
@@ -225,9 +224,11 @@ table.data-table tbody tr:hover{background:var(--bg-panel-2);}
 <div class="shell">
   <aside class="sidebar">
     <div class="brand">
-      <span class="mark">⚠</span>
-      <div class="name">SIGAP K3</div>
-      <div class="tag">Training &amp; Ujian Monitor</div>
+      <div class="brand-logos">
+        <div class="logo-box"><img src="assets/logo-kpp.png" alt="KPP Mining"></div>
+        <div class="logo-box"><img src="assets/logo-ciss.png" alt="CISS"></div>
+        <div class="logo-box"><img src="assets/logo-asto.png" alt="ASTO"></div>
+      </div>
     </div>
     <div class="hazard-rule"></div>
     <nav class="nav" id="nav">
