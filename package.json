@@ -1,0 +1,10 @@
+{
+  "name": "sigap-k3-dashboard",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Dashboard monitoring training & ujian K3 (Hand & Finger, Power Tools, Lifting, Electrical, Welding, High Risk Activity)",
+  "dependencies": {
+    "@neondatabase/serverless": "^0.9.5"
+  }
+}

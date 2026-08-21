@@ -1,0 +1,1031 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SIGAP K3 — Dashboard Training &amp; Ujian</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pptxgenjs/3.12.0/pptxgen.bundle.js"></script>
+<style>
+:root{
+  --bg:#10151c;
+  --bg-panel:#161e28;
+  --bg-panel-2:#1b2431;
+  --grid-line:rgba(255,255,255,.055);
+  --steel:#2c3644;
+  --steel-light:#3a4553;
+  --amber:#ffb020;
+  --amber-dim:#8a6a2c;
+  --cyan:#4fd1e8;
+  --pass:#2fae66;
+  --pass-dim:#1c6e42;
+  --fail:#e5484d;
+  --fail-dim:#8f2d30;
+  --text:#edeff3;
+  --text-muted:#8a94a3;
+  --text-faint:#5b6472;
+  --radius:10px;
+  --font-display:'Barlow Condensed',sans-serif;
+  --font-body:'Inter',sans-serif;
+  --font-mono:'IBM Plex Mono',monospace;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  background:
+    linear-gradient(var(--grid-line) 1px,transparent 1px) 0 0/38px 38px,
+    linear-gradient(90deg,var(--grid-line) 1px,transparent 1px) 0 0/38px 38px,
+    var(--bg);
+  color:var(--text);
+  font-family:var(--font-body);
+  min-height:100vh;
+  -webkit-font-smoothing:antialiased;
+}
+::selection{background:var(--amber);color:#1a1305;}
+button{font-family:var(--font-body);cursor:pointer;}
+input,select{font-family:var(--font-body);}
+a{color:inherit;}
+
+/* ---------- layout shell ---------- */
+.shell{display:flex;min-height:100vh;}
+.sidebar{
+  width:220px;flex:none;
+  background:linear-gradient(180deg,#131a23,#0e131a);
+  border-right:1px solid var(--steel);
+  padding:22px 0 18px;
+  display:flex;flex-direction:column;
+  position:sticky;top:0;height:100vh;
+}
+.brand{padding:0 20px 20px;border-bottom:1px solid var(--steel);margin-bottom:14px;}
+.brand .mark{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:34px;height:34px;background:var(--amber);color:#1a1305;
+  font-family:var(--font-display);font-weight:800;font-size:18px;border-radius:6px;
+  transform:rotate(-3deg);
+}
+.brand .name{font-family:var(--font-display);font-weight:700;font-size:22px;letter-spacing:.04em;margin-top:10px;text-transform:uppercase;}
+.brand .tag{font-size:10.5px;color:var(--text-muted);letter-spacing:.14em;text-transform:uppercase;margin-top:2px;}
+.hazard-rule{height:6px;background:repeating-linear-gradient(135deg,var(--amber) 0 10px,#1a1305 10px 20px);opacity:.85;}
+.nav{display:flex;flex-direction:column;gap:2px;padding:14px 12px;}
+.nav button{
+  all:unset;display:flex;align-items:center;gap:10px;
+  padding:11px 12px;border-radius:8px;color:var(--text-muted);
+  font-family:var(--font-display);font-size:16px;letter-spacing:.03em;text-transform:uppercase;font-weight:600;
+  transition:background .15s,color .15s;
+}
+.nav button .num{font-family:var(--font-mono);font-size:11px;color:var(--text-faint);}
+.nav button:hover{background:var(--bg-panel-2);color:var(--text);}
+.nav button.active{background:var(--bg-panel-2);color:var(--amber);box-shadow:inset 3px 0 0 var(--amber);}
+.sidebar-foot{margin-top:auto;padding:14px 20px 0;border-top:1px solid var(--steel);font-size:11px;color:var(--text-faint);line-height:1.6;}
+
+.main{flex:1;min-width:0;display:flex;flex-direction:column;}
+.topbar{
+  padding:18px 30px;border-bottom:1px solid var(--steel);
+  display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;
+  background:rgba(19,26,35,.5);backdrop-filter:blur(6px);position:sticky;top:0;z-index:5;
+}
+.topbar h1{font-family:var(--font-display);font-size:26px;font-weight:700;letter-spacing:.02em;margin:0;text-transform:uppercase;}
+.topbar .sub{font-size:12.5px;color:var(--text-muted);margin-top:2px;}
+.view{padding:26px 30px 60px;max-width:1320px;}
+
+/* ---------- generic components ---------- */
+.eyebrow{font-family:var(--font-mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--amber);margin:0 0 6px;}
+.panel{background:var(--bg-panel);border:1px solid var(--steel);border-radius:var(--radius);padding:20px;}
+.grid{display:grid;gap:18px;}
+.kpi-row{grid-template-columns:repeat(auto-fit,minmax(190px,1fr));}
+.kpi{background:var(--bg-panel);border:1px solid var(--steel);border-radius:var(--radius);padding:16px 18px;position:relative;overflow:hidden;}
+.kpi::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--amber);}
+.kpi .lbl{font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.08em;}
+.kpi .val{font-family:var(--font-display);font-size:36px;font-weight:700;margin-top:4px;}
+.kpi.pass::before{background:var(--pass);}
+.kpi.fail::before{background:var(--fail);}
+.kpi .val.pass-c{color:var(--pass);}
+.kpi .val.fail-c{color:var(--fail);}
+
+.btn{
+  border:1px solid var(--steel-light);background:var(--bg-panel-2);color:var(--text);
+  padding:9px 16px;border-radius:7px;font-size:13px;font-weight:600;
+  display:inline-flex;align-items:center;gap:7px;transition:border-color .15s,background .15s;
+}
+.btn:hover{border-color:var(--amber);}
+.btn-primary{background:var(--amber);color:#1a1305;border-color:var(--amber);}
+.btn-primary:hover{background:#ffc75c;}
+.btn-ghost{background:transparent;}
+.btn:disabled{opacity:.4;cursor:not-allowed;}
+
+/* stamp */
+.stamp{
+  display:inline-block;font-family:var(--font-display);font-weight:800;font-size:13px;
+  letter-spacing:.12em;text-transform:uppercase;padding:5px 12px;border-radius:4px;
+  border:2px solid currentColor;transform:rotate(-4deg);position:relative;
+}
+.stamp::after{content:'';position:absolute;inset:2px;border:1px dashed currentColor;border-radius:2px;opacity:.5;}
+.stamp.pass{color:var(--pass);}
+.stamp.fail{color:var(--fail);}
+
+/* ---------- materi ---------- */
+.materi-grid{grid-template-columns:repeat(auto-fill,minmax(300px,1fr));}
+.materi-card{background:var(--bg-panel);border:1px solid var(--steel);border-radius:var(--radius);padding:18px;display:flex;flex-direction:column;gap:10px;cursor:pointer;transition:border-color .15s,transform .15s;}
+.materi-card:hover{border-color:var(--amber);transform:translateY(-2px);}
+.materi-card .ic{width:38px;height:38px;border-radius:8px;background:var(--bg-panel-2);display:flex;align-items:center;justify-content:center;font-size:19px;}
+.materi-card h3{font-family:var(--font-display);font-size:20px;margin:0;text-transform:uppercase;letter-spacing:.02em;}
+.materi-card p{font-size:12.5px;color:var(--text-muted);margin:0;line-height:1.5;}
+.materi-card .reg{font-family:var(--font-mono);font-size:10.5px;color:var(--cyan);margin-top:auto;}
+
+.materi-detail h2{font-family:var(--font-display);font-size:32px;text-transform:uppercase;margin:4px 0 2px;}
+.materi-detail .reg-tag{display:inline-block;font-family:var(--font-mono);font-size:11px;color:var(--cyan);background:rgba(79,209,232,.08);border:1px solid rgba(79,209,232,.3);padding:4px 10px;border-radius:20px;margin-bottom:18px;}
+.materi-body{display:grid;grid-template-columns:1fr;gap:14px;}
+.materi-block{background:var(--bg-panel);border:1px solid var(--steel);border-left:3px solid var(--amber);border-radius:8px;padding:14px 18px;}
+.materi-block h4{font-family:var(--font-display);font-size:16px;text-transform:uppercase;letter-spacing:.04em;margin:0 0 6px;color:var(--amber);}
+.materi-block ul{margin:0;padding-left:18px;}
+.materi-block li{font-size:13.5px;line-height:1.65;color:#d7dbe2;margin-bottom:3px;}
+.materi-block p{font-size:13.5px;line-height:1.65;color:#d7dbe2;margin:0;}
+.back-link{font-family:var(--font-mono);font-size:12px;color:var(--text-muted);display:inline-flex;align-items:center;gap:6px;margin-bottom:14px;}
+.back-link:hover{color:var(--amber);}
+
+/* ---------- ujian ---------- */
+.exam-card{background:var(--bg-panel);border:1px solid var(--steel);border-radius:var(--radius);padding:18px;display:flex;flex-direction:column;gap:10px;}
+.exam-card h3{font-family:var(--font-display);font-size:19px;text-transform:uppercase;margin:0;}
+.exam-card .meta{font-size:12px;color:var(--text-muted);}
+.link-row{display:flex;gap:6px;align-items:center;background:var(--bg-panel-2);border:1px solid var(--steel);border-radius:6px;padding:6px 8px;}
+.link-row input{flex:1;background:transparent;border:none;color:var(--text-faint);font-family:var(--font-mono);font-size:10.5px;outline:none;}
+.exam-card .actions{display:flex;gap:8px;margin-top:auto;}
+
+.form-box{max-width:440px;background:var(--bg-panel);border:1px solid var(--steel);border-radius:var(--radius);padding:24px;}
+.form-box label{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);margin:14px 0 6px;}
+.form-box input{width:100%;background:var(--bg-panel-2);border:1px solid var(--steel-light);border-radius:7px;padding:10px 12px;color:var(--text);font-size:14px;outline:none;}
+.form-box input:focus{border-color:var(--amber);}
+
+.qcard{background:var(--bg-panel);border:1px solid var(--steel);border-radius:var(--radius);padding:24px;max-width:640px;}
+.qcard .qmeta{font-family:var(--font-mono);font-size:11px;color:var(--text-muted);display:flex;justify-content:space-between;margin-bottom:10px;}
+.qcard .qtext{font-size:17px;font-weight:600;line-height:1.5;margin-bottom:18px;}
+.opt{display:flex;gap:10px;align-items:flex-start;background:var(--bg-panel-2);border:1px solid var(--steel);border-radius:8px;padding:11px 14px;margin-bottom:9px;transition:border-color .15s,background .15s;}
+.opt:hover{border-color:var(--amber-dim);}
+.opt.selected{border-color:var(--amber);background:rgba(255,176,32,.08);}
+.opt input{margin-top:3px;accent-color:var(--amber);}
+.opt label{font-size:13.5px;line-height:1.5;cursor:pointer;flex:1;}
+.progress-bar{height:5px;background:var(--steel);border-radius:3px;overflow:hidden;margin-bottom:16px;}
+.progress-bar > div{height:100%;background:var(--amber);transition:width .2s;}
+
+.result-box{max-width:480px;background:var(--bg-panel);border:1px solid var(--steel);border-radius:var(--radius);padding:30px;text-align:center;}
+.result-box .score{font-family:var(--font-display);font-size:64px;font-weight:800;margin:14px 0;}
+.result-box .score.pass-c{color:var(--pass);}
+.result-box .score.fail-c{color:var(--fail);}
+
+/* ---------- charts (isometric 3D bars) ---------- */
+.chart-title{font-family:var(--font-display);font-size:18px;text-transform:uppercase;letter-spacing:.03em;margin:0 0 2px;}
+.chart-sub{font-size:11.5px;color:var(--text-muted);margin:0 0 20px;}
+.iso-wrap{overflow-x:auto;padding-bottom:6px;}
+.iso-chart{display:flex;align-items:flex-end;gap:38px;height:210px;padding:36px 14px 0;min-width:max-content;}
+.iso-col{display:flex;flex-direction:column;align-items:center;gap:10px;}
+.iso-bar{position:relative;width:46px;--h:10px;}
+.iso-bar .bv{font-family:var(--font-mono);font-size:12px;color:var(--text);position:absolute;left:50%;top:-20px;transform:translateX(-50%);white-space:nowrap;}
+.iso-bar .front{position:absolute;left:0;bottom:0;width:46px;height:var(--h);background:linear-gradient(180deg,var(--c1),var(--c2));border-radius:2px 2px 0 0;}
+.iso-bar .side{position:absolute;left:44px;bottom:0;width:13px;height:var(--h);background:var(--c3);transform:skewY(-40deg);transform-origin:top left;border-radius:0 2px 0 0;}
+.iso-bar .top{position:absolute;left:0;bottom:var(--h);width:46px;height:13px;background:var(--c4);transform:skewX(-40deg) translateY(0px);transform-origin:bottom left;}
+.iso-label{font-family:var(--font-display);font-size:13px;text-transform:uppercase;letter-spacing:.02em;color:var(--text-muted);text-align:center;max-width:96px;line-height:1.15;}
+.legend{display:flex;gap:18px;margin-top:6px;flex-wrap:wrap;}
+.legend .li{display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--text-muted);}
+.legend .sw{width:11px;height:11px;border-radius:3px;}
+
+/* ---------- filters & table ---------- */
+.filters{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;margin-bottom:18px;}
+.filters .fld{display:flex;flex-direction:column;gap:5px;}
+.filters label{font-size:10.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);}
+.filters input,.filters select{background:var(--bg-panel-2);border:1px solid var(--steel-light);border-radius:6px;padding:8px 10px;color:var(--text);font-size:12.5px;outline:none;min-width:140px;}
+.filters input:focus,.filters select:focus{border-color:var(--amber);}
+
+table.data-table{width:100%;border-collapse:collapse;font-size:12.5px;}
+table.data-table thead th{
+  text-align:left;font-family:var(--font-display);font-size:12px;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--amber);border-bottom:1px solid var(--steel);padding:9px 12px;white-space:nowrap;
+}
+table.data-table tbody td{padding:9px 12px;border-bottom:1px solid var(--grid-line);font-family:var(--font-mono);white-space:nowrap;}
+table.data-table tbody tr:hover{background:var(--bg-panel-2);}
+.badge{display:inline-block;font-family:var(--font-body);font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:20px;text-transform:uppercase;letter-spacing:.03em;}
+.badge.pass{color:var(--pass);background:rgba(47,174,102,.12);border:1px solid var(--pass-dim);}
+.badge.fail{color:var(--fail);background:rgba(229,72,77,.12);border:1px solid var(--fail-dim);}
+.badge.muted{color:var(--text-faint);background:transparent;border:1px solid var(--steel);}
+.empty{color:var(--text-faint);font-size:12.5px;padding:30px;text-align:center;}
+
+.section-head{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:14px;}
+
+@media (max-width:860px){
+  .shell{flex-direction:column;}
+  .sidebar{position:relative;width:100%;height:auto;flex-direction:row;overflow-x:auto;padding:14px;}
+  .brand,.sidebar-foot,.hazard-rule{display:none;}
+  .nav{flex-direction:row;padding:0;}
+  .view{padding:18px 16px 50px;}
+  .topbar{padding:14px 16px;}
+}
+</style>
+</head>
+<body>
+<div class="shell">
+  <aside class="sidebar">
+    <div class="brand">
+      <span class="mark">⚠</span>
+      <div class="name">SIGAP K3</div>
+      <div class="tag">Training &amp; Ujian Monitor</div>
+    </div>
+    <div class="hazard-rule"></div>
+    <nav class="nav" id="nav">
+      <button data-route="dashboard"><span>📊</span>Dashboard</button>
+      <button data-route="materi"><span>📘</span>Materi</button>
+      <button data-route="ujian"><span>📝</span>Soal Ujian</button>
+    </nav>
+    <div class="sidebar-foot">Data ujian tersimpan bersama (shared) &amp; terlihat oleh semua pengguna aplikasi ini.</div>
+  </aside>
+  <div class="main">
+    <header class="topbar">
+      <div>
+        <h1 id="page-title">Dashboard</h1>
+        <div class="sub" id="page-sub">Ringkasan pencapaian pelatihan &amp; ujian K3</div>
+      </div>
+      <div style="display:flex;gap:10px;">
+        <button class="btn" id="btn-export">⇩ Export ke PPT</button>
+      </div>
+    </header>
+    <main class="view" id="view-root"></main>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   DATA: kategori materi + bank soal (10 soal / kategori)
+   ============================================================ */
+const CATEGORIES = [
+{
+  id:'hand-finger', name:'Hand & Finger Injury', icon:'🖐️',
+  reg:'Permenaker No. 38/2016 · Permenaker No. 01/1988 (APD)',
+  ringkas:'Pencegahan cedera terjepit, tersayat & tergilas pada tangan dan jari saat bekerja dengan mesin/alat.',
+  materi:[
+    {h:'Definisi & Bahaya Utama', items:[
+      'Cedera tangan/jari umumnya terjadi akibat titik jepit (pinch point) pada mesin berputar, alat potong, dan proses pengepresan.',
+      'Bentuk cedera: terjepit, tersayat, tergilas, tergores, hingga amputasi jari.',
+      'Perhiasan (cincin, gelang) meningkatkan risiko cedera serius (degloving) saat tersangkut mesin berputar.']},
+    {h:'Dasar Regulasi', items:[
+      'Permenaker No. 38 Tahun 2016 tentang K3 Pesawat Tenaga dan Produksi — mewajibkan pengaman pada titik operasi mesin.',
+      'Permenaker No. 01/1988 tentang Alat Pelindung Diri (APD) — kewajiban penyediaan & penggunaan sarung tangan sesuai jenis bahaya.']},
+    {h:'Pengendalian & Pencegahan', items:[
+      'Hierarki pengendalian: eliminasi/substitusi (otomasi) → engineering control (machine guarding, two-hand control) → administratif (SOP, LOTO) → APD.',
+      'Lockout-Tagout (LOTO) wajib dilakukan sebelum perbaikan/maintenance mesin untuk mencegah mesin bergerak tiba-tiba.',
+      'Gunakan sarung tangan sesuai jenis pekerjaan (anti-sayat/kevlar untuk logam tajam, tahan panas untuk area panas).',
+      'Inspeksi rutin alat tangan (hand tools) — ganti alat yang tumpul/rusak.']}
+  ],
+  soal:[
+    {q:'Apa yang dimaksud dengan "pinch point" dalam konteks keselamatan kerja?',o:['Titik dimana dua bagian mesin bertemu dan dapat menjepit anggota tubuh','Titik pengisian bahan bakar','Titik pengukuran tekanan','Titik pemasangan APD'],a:0},
+    {q:'Pengaman yang dipasang pada titik operasi mesin untuk mencegah tangan operator masuk ke area berbahaya disebut?',o:['Emergency stop','Point of operation guard','Interlock listrik','APD tangan'],a:1},
+    {q:'Dasar hukum utama yang mengatur K3 pesawat tenaga dan produksi termasuk pengaman mesin di Indonesia adalah?',o:['Permenaker No. 12/2015','Permenaker No. 38/2016','Permenaker No. 8/2020','UU No. 13/2003'],a:1},
+    {q:'Jenis sarung tangan yang tepat untuk pekerjaan memotong logam tajam adalah?',o:['Sarung tangan katun tipis','Sarung tangan kevlar/anti-sayat','Sarung tangan lateks medis','Tanpa sarung tangan agar lebih presisi'],a:1},
+    {q:'Prosedur yang wajib dilakukan sebelum perbaikan/maintenance mesin untuk mencegah mesin tiba-tiba bergerak dan melukai tangan adalah?',o:['Lockout-Tagout (LOTO)','Membersihkan mesin','Mengisi checklist harian','Memberi pelumas'],a:0},
+    {q:'Cincin/perhiasan sebaiknya dilepas saat bekerja dengan mesin berputar karena berisiko?',o:['Menghambat pekerjaan','Tersangkut dan menyebabkan cedera jari serius (degloving)','Membuat tangan kotor','Tidak ada risiko berarti'],a:1},
+    {q:'Tindakan pertama saat terjadi cedera jari akibat terjepit mesin adalah?',o:['Melanjutkan pekerjaan','Amankan area, matikan mesin, dan segera berikan pertolongan pertama','Membiarkan korban bekerja sendiri','Menunggu shift berakhir'],a:1},
+    {q:'Pengendalian risiko cedera tangan yang paling efektif menurut hierarki pengendalian bahaya adalah?',o:['APD','Eliminasi/substitusi bahaya seperti otomasi proses','Rambu peringatan','Pelatihan saja'],a:1},
+    {q:'Apa fungsi utama "two-hand control" pada mesin press?',o:['Mempercepat produksi','Memastikan kedua tangan operator berada di tombol kontrol dan jauh dari titik jepit','Menghemat energi','Mengurangi kebisingan'],a:1},
+    {q:'Cedera jari akibat penggunaan alat tangan yang tumpul/rusak dapat dicegah dengan?',o:['Tetap digunakan sampai rusak total','Inspeksi rutin & penggantian alat yang aus/rusak','Menggunakan lebih banyak tenaga','Mengabaikan kondisi alat'],a:1}
+  ]
+},
+{
+  id:'power-tools', name:'Power Tools Safety', icon:'🛠️',
+  reg:'Permenaker No. 38/2016 (K3 Pesawat Tenaga & Produksi)',
+  ringkas:'Penggunaan aman perkakas listrik/bertenaga: gerinda, bor, gergaji mesin, dan alat portable lainnya.',
+  materi:[
+    {h:'Bahaya Utama', items:[
+      'Terjepit/terpotong mata alat, tersengat listrik dari kabel rusak, terlempar percikan/serpihan, kickback pada gergaji mesin.',
+      'Paparan getaran (vibration) jangka panjang dapat menyebabkan Hand-Arm Vibration Syndrome (HAVS).']},
+    {h:'Dasar Regulasi', items:[
+      'Permenaker No. 38 Tahun 2016 tentang K3 Pesawat Tenaga dan Produksi — persyaratan pemeriksaan, pengujian & sertifikasi kelayakan alat.']},
+    {h:'Prosedur Aman', items:[
+      'Lakukan pemeriksaan visual (pre-use inspection) sebelum alat digunakan — kabel, guard, mata alat.',
+      'Gunakan APD: kacamata pelindung, sarung tangan sesuai jenis pekerjaan, pelindung telinga bila bising.',
+      'Guard/pelindung mata pisau tidak boleh dilepas atau dimodifikasi tanpa izin.',
+      'Matikan & putus sumber daya sebelum mengganti mata bor/mata potong.',
+      'Simpan power tools di tempat kering, aman, dan sesuai tempatnya setelah digunakan.']}
+  ],
+  soal:[
+    {q:'Sebelum menggunakan power tools, operator wajib melakukan?',o:['Langsung menggunakan','Pemeriksaan visual (pre-use inspection) terhadap kondisi alat & kabel','Menunggu izin atasan saja','Membaca manual sekali seumur hidup'],a:1},
+    {q:'Pelindung mata wajib digunakan saat mengoperasikan gerinda tangan karena risiko?',o:['Debu ringan','Percikan/serpihan yang dapat melukai mata','Tidak ada risiko mata','Hanya untuk kenyamanan'],a:1},
+    {q:'Power tools yang digunakan harus memiliki kelayakan sesuai?',o:['Selera operator','Permenaker No. 38 Tahun 2016 tentang K3 Pesawat Tenaga dan Produksi','Tidak perlu sertifikasi','Standar internal tanpa acuan'],a:1},
+    {q:'Salah satu penyebab kecelakaan power tools adalah "kickback" pada gergaji mesin, yaitu?',o:['Alat mati mendadak','Hentakan balik alat secara tiba-tiba saat mata pisau tersangkut','Alat menjadi lebih tajam','Proses pengisian daya'],a:1},
+    {q:'Kabel power tools yang terkelupas harus?',o:['Tetap digunakan dengan hati-hati','Segera dilaporkan dan diganti/diperbaiki sebelum digunakan','Ditutup selotip lalu dipakai terus','Dibiarkan karena jarang terjadi masalah'],a:1},
+    {q:'Guard/pelindung mata pisau pada gerinda tidak boleh?',o:['Dipasang sesuai standar pabrik','Dilepas atau dimodifikasi tanpa izin','Diperiksa rutin','Dibersihkan'],a:1},
+    {q:'Operator power tools portable sebaiknya menggunakan APD berikut, kecuali?',o:['Kacamata pelindung','Sarung tangan sesuai jenis pekerjaan','Sandal jepit','Pelindung telinga jika bising'],a:2},
+    {q:'Sebelum mengganti mata bor/mata potong, power tools harus dalam kondisi?',o:['Menyala','Mati total dan sumber daya terputus','Setengah menyala','Tidak masalah asal cepat'],a:1},
+    {q:'Risiko getaran (vibration) jangka panjang dari power tools dapat menyebabkan?',o:['Hand-Arm Vibration Syndrome (HAVS)','Tidak ada dampak kesehatan','Meningkatkan produktivitas','Memperkuat otot tangan'],a:0},
+    {q:'Penyimpanan power tools yang benar setelah digunakan adalah?',o:['Dibiarkan di lantai kerja','Disimpan di tempat kering, aman, dan sesuai tempatnya','Ditumpuk sembarangan','Dibiarkan tersambung listrik'],a:1}
+  ]
+},
+{
+  id:'lifting', name:'Lifting Injury', icon:'📦',
+  reg:'Permenaker No. 8/2020 (Pesawat Angkat & Angkut) · PP No. 30/2000',
+  ringkas:'Cedera akibat teknik angkat manual yang salah maupun pengoperasian pesawat angkat/angkut.',
+  materi:[
+    {h:'Bahaya Utama', items:[
+      'Cedera punggung, otot, dan sendi akibat teknik angkat manual yang salah atau beban berlebih.',
+      'Cedera akibat gerakan berulang disebut musculoskeletal disorder (cedera ergonomi).']},
+    {h:'Dasar Regulasi', items:[
+      'Permenaker No. 8 Tahun 2020 tentang K3 pada Penggunaan dan Pengoperasian Pesawat Angkat dan Pesawat Angkut.',
+      'PP No. 30 Tahun 2000 tentang Tenaga Kerja di Lingkungan Kerja yang Menggunakan Pesawat Angkat.',
+      'Operator forklift/crane wajib memiliki Lisensi K3 (Surat Izin Operator).']},
+    {h:'Teknik & Pencegahan', items:[
+      'Teknik angkat aman: tekuk lutut, punggung tetap lurus, beban dekat tubuh, posisi kaki selebar bahu.',
+      'Gunakan alat bantu angkat (hand truck, trolley, hoist) untuk beban berat.',
+      'Periksa & uji berkala pesawat angkat; patuhi batas Safe Working Load (SWL) yang tertera pada alat.',
+      'Beri rambu peringatan & barikade pada area kerja pesawat angkat.']}
+  ],
+  soal:[
+    {q:'Teknik mengangkat beban yang benar untuk mencegah cedera punggung adalah?',o:['Membungkuk dari pinggang','Menekuk lutut, punggung tetap lurus, beban dekat tubuh','Memutar badan sambil mengangkat','Mengangkat secepat mungkin'],a:1},
+    {q:'Regulasi yang mengatur K3 pesawat angkat dan angkut di Indonesia adalah?',o:['Permenaker No. 12/2015','Permenaker No. 8 Tahun 2020','Permenaker No. 38/2016','UU No. 1/1970 saja'],a:1},
+    {q:'Operator forklift atau crane wajib memiliki?',o:['SIM C','Lisensi K3/Surat Izin Operator (SIO) sesuai jenis pesawat','Tidak perlu izin khusus','KTP saja'],a:1},
+    {q:'Jika beban terlalu berat untuk diangkat sendiri, tindakan yang tepat adalah?',o:['Memaksakan diri','Meminta bantuan rekan kerja atau menggunakan alat bantu angkat','Mengangkat dengan satu tangan','Menunda tanpa laporan'],a:1},
+    {q:'Cedera akibat gerakan berulang saat mengangkat beban disebut?',o:['Cedera akut','Cedera ergonomi/musculoskeletal disorder','Cedera termal','Cedera listrik'],a:1},
+    {q:'Sebelum mengoperasikan pesawat angkat, wajib dilakukan?',o:['Pemeriksaan & pengujian berkala serta pengecekan harian','Langsung dioperasikan','Menunggu laporan kerusakan','Tidak perlu prosedur khusus'],a:0},
+    {q:'Posisi kaki yang benar saat mengangkat beban adalah?',o:['Rapat dan sejajar','Selebar bahu untuk keseimbangan yang baik','Menyilang','Berjinjit'],a:1},
+    {q:'Alat bantu angkat manual seperti hand truck/trolley digunakan untuk?',o:['Mengurangi beban fisik dan risiko cedera saat memindahkan barang','Memperlambat pekerjaan','Menambah risiko','Tidak berpengaruh'],a:0},
+    {q:'Area kerja pesawat angkat harus diberi?',o:['Tidak perlu tanda','Rambu peringatan & barikade untuk mencegah orang tidak berkepentingan masuk','Hiasan tambahan','Karpet'],a:1},
+    {q:'Batas beban maksimum suatu alat angkat ditunjukkan pada?',o:['Warna alat','Safe Working Load (SWL)/kapasitas yang tertera pada alat','Tidak ada batasan','Perkiraan operator'],a:1}
+  ]
+},
+{
+  id:'electrical', name:'Electrical Injury', icon:'⚡',
+  reg:'Permenaker No. 12/2015 jo. No. 33/2015 · PUIL 2000',
+  ringkas:'Pencegahan sengatan listrik, arc flash, dan bahaya kelistrikan lain di tempat kerja.',
+  materi:[
+    {h:'Bahaya Utama', items:[
+      'Sengatan listrik (electrocution), luka bakar, dan arc flash (ledakan busur listrik akibat hubung singkat).']},
+    {h:'Dasar Regulasi', items:[
+      'Permenaker No. 12 Tahun 2015 jo. No. 33 Tahun 2015 tentang K3 Listrik di Tempat Kerja.',
+      'PUIL (Persyaratan Umum Instalasi Listrik) sebagai standar teknis instalasi.',
+      'Perusahaan dengan kapasitas pembangkit > 200 kVA wajib memiliki Ahli K3 Listrik.']},
+    {h:'Pencegahan', items:[
+      'Lockout-Tagout (LOTO) listrik sebelum perbaikan instalasi/peralatan bertegangan.',
+      'Gunakan sarung tangan isolasi (insulated gloves) sesuai rating tegangan saat bekerja pada instalasi bertegangan.',
+      'Jaga jarak aman terhadap instalasi bertegangan tinggi; pastikan grounding/pentanahan berfungsi baik.',
+      'Pekerjaan instalasi listrik hanya boleh dilakukan oleh Teknisi/Ahli K3 Listrik berlisensi.']}
+  ],
+  soal:[
+    {q:'Regulasi utama K3 kelistrikan di tempat kerja di Indonesia adalah?',o:['Permenaker No. 12 Tahun 2015 jo. No. 33 Tahun 2015','Permenaker No. 38/2016','Permenaker No. 8/2020','UU No. 13/2003'],a:0},
+    {q:'Perusahaan dengan kapasitas pembangkit listrik lebih dari 200 kVA wajib memiliki?',o:['Satpam tambahan','Ahli K3 bidang Listrik','Genset cadangan','Tidak ada kewajiban khusus'],a:1},
+    {q:'Standar teknis instalasi listrik yang dirujuk dalam K3 listrik Indonesia adalah?',o:['NEC Amerika','PUIL (Persyaratan Umum Instalasi Listrik)','Tidak ada standar','Standar internal masing-masing perusahaan'],a:1},
+    {q:'Prosedur mematikan dan mengunci sumber listrik sebelum perbaikan disebut?',o:['Grounding','Lockout-Tagout (LOTO)','Bonding','Insulasi'],a:1},
+    {q:'Bahaya ledakan busur listrik akibat hubung singkat disebut?',o:['Short circuit biasa','Arc flash','Overload ringan','Grounding fault tanpa risiko'],a:1},
+    {q:'APD wajib untuk pekerjaan pada instalasi listrik bertegangan adalah?',o:['Sarung tangan katun biasa','Sarung tangan isolasi sesuai rating tegangan','Sarung tangan kain','Tanpa APD khusus'],a:1},
+    {q:'Jarak aman minimum terhadap instalasi listrik bertegangan tinggi diatur untuk mencegah?',o:['Kebisingan','Sengatan listrik akibat lompatan arus','Kebocoran air','Korosi'],a:1},
+    {q:'Grounding/pentanahan pada instalasi listrik berfungsi untuk?',o:['Mempercepat arus','Mengalirkan arus bocor ke tanah dan mencegah sengatan listrik','Menghias instalasi','Tidak berfungsi apa-apa'],a:1},
+    {q:'Pekerjaan pada instalasi listrik hanya boleh dilakukan oleh?',o:['Siapa saja','Teknisi/Ahli K3 Listrik yang memiliki lisensi','Pekerja baru tanpa pelatihan','Petugas kebersihan'],a:1},
+    {q:'Tindakan pertama jika rekan kerja tersengat listrik dan masih menempel pada sumber listrik adalah?',o:['Menarik tubuh korban langsung dengan tangan','Matikan sumber listrik atau gunakan benda non-konduktor untuk melepaskan kontak','Menyiram air','Membiarkan saja'],a:1}
+  ]
+},
+{
+  id:'welding', name:'Welding Injury', icon:'🔥',
+  reg:'Permenaker No. 38/2016 · Kualifikasi Juru Las & Hot Work Permit',
+  ringkas:'Cedera akibat pengelasan: luka bakar, radiasi mata, asap las, hingga risiko kebakaran.',
+  materi:[
+    {h:'Bahaya Utama', items:[
+      'Radiasi sinar las menyebabkan kerusakan mata (arc eye/photokeratitis).',
+      'Luka bakar dari percikan api & logam panas, serta risiko kebakaran/ledakan di sekitar area kerja.',
+      'Asap las (welding fume) berisiko menyebabkan gangguan pernapasan jangka panjang.']},
+    {h:'Dasar Regulasi & Persyaratan', items:[
+      'Termasuk cakupan Permenaker No. 38 Tahun 2016 tentang K3 Pesawat Tenaga dan Produksi.',
+      'Wajib memiliki Hot Work Permit (izin kerja panas) sebelum mengelas di area berisiko kebakaran.',
+      'Juru las sebaiknya memiliki sertifikat kualifikasi juru las.']},
+    {h:'Pencegahan', items:[
+      'Gunakan welding helmet/kedok las dengan filter lensa sesuai dan sarung tangan kulit tahan panas.',
+      'Pastikan ventilasi/exhaust memadai saat mengelas di ruang tertutup.',
+      'Singkirkan/lindungi bahan mudah terbakar di sekitar area pengelasan.',
+      'Lakukan fire watch setelah selesai mengelas untuk memastikan tidak ada bara api tersisa.']}
+  ],
+  soal:[
+    {q:'Kerusakan mata akibat radiasi sinar las disebut?',o:['Katarak biasa','Arc eye/photokeratitis','Rabun jauh','Buta warna'],a:1},
+    {q:'APD wajib untuk melindungi wajah dan mata saat mengelas adalah?',o:['Kacamata biasa','Welding helmet/kedok las dengan filter lensa sesuai','Masker kain','Tidak perlu APD wajah'],a:1},
+    {q:'Sebelum mengelas di area berisiko kebakaran, wajib memiliki?',o:['Izin lisan saja','Hot work permit/izin kerja panas','Tidak perlu izin','Persetujuan rekan kerja'],a:1},
+    {q:'Asap hasil pengelasan (welding fume) dapat menyebabkan gangguan?',o:['Tidak berbahaya','Pernapasan/paru-paru jika terhirup jangka panjang','Hanya bau tidak sedap','Meningkatkan stamina'],a:1},
+    {q:'Juru las yang bekerja pada proyek konstruksi/industri sebaiknya memiliki?',o:['Sertifikat kualifikasi juru las','Tidak perlu sertifikat','KTP saja','SIM'],a:0},
+    {q:'Sarung tangan yang tepat untuk pengelasan adalah?',o:['Sarung tangan lateks','Sarung tangan kulit tahan panas (welding gloves)','Sarung tangan kain tipis','Tanpa sarung tangan'],a:1},
+    {q:'Sebelum mengelas di area tertutup, harus dipastikan adanya?',o:['Ventilasi/exhaust yang memadai untuk mengeluarkan asap las','Ruangan tertutup rapat','Tidak perlu ventilasi','Pendingin ruangan saja'],a:0},
+    {q:'Bahan mudah terbakar di sekitar area pengelasan harus?',o:['Dibiarkan dekat area kerja','Disingkirkan atau dilindungi dari percikan api las','Ditambah jumlahnya','Tidak masalah'],a:1},
+    {q:'Percikan api las dan logam panas dapat menyebabkan cedera?',o:['Tidak berbahaya','Luka bakar kulit dan risiko kebakaran','Hanya kotor','Meningkatkan produktivitas'],a:1},
+    {q:'Setelah selesai mengelas, area kerja harus?',o:['Ditinggalkan langsung','Diperiksa ulang (fire watch) memastikan tidak ada bara api tersisa','Dibiarkan panas','Tidak perlu diperiksa'],a:1}
+  ]
+},
+{
+  id:'high-risk', name:'High Risk Activity Lainnya', icon:'🪜',
+  reg:'Permenaker No. 9/2016 (Ketinggian) · Izin Kerja / Permit to Work',
+  ringkas:'Pekerjaan di ketinggian, ruang terbatas, dan aktivitas berisiko tinggi lain yang wajib izin kerja.',
+  materi:[
+    {h:'Cakupan & Bahaya', items:[
+      'Pekerjaan di ketinggian, ruang terbatas (confined space), dan pekerjaan panas termasuk kategori pekerjaan berisiko tinggi.',
+      'Bahaya utama ruang terbatas: kekurangan oksigen atau gas beracun.']},
+    {h:'Dasar Regulasi', items:[
+      'Permenaker No. 9 Tahun 2016 tentang K3 dalam Pekerjaan pada Ketinggian.',
+      'Setiap pekerjaan berisiko tinggi wajib disertai Surat Izin Kerja (Permit to Work/PTW).']},
+    {h:'Pencegahan', items:[
+      'Tenaga kerja di ketinggian wajib memiliki sertifikat kompetensi/lisensi K3 sesuai bidangnya.',
+      'Gunakan full body harness dengan lanyard terhubung ke anchor point yang kuat.',
+      'Sebelum memasuki ruang terbatas: ukur kadar oksigen & gas berbahaya, siapkan attendant/pengawas.',
+      'Susun rencana tanggap darurat (emergency response plan) untuk memastikan kesiapan evakuasi.']}
+  ],
+  soal:[
+    {q:'Regulasi K3 yang mengatur pekerjaan pada ketinggian di Indonesia adalah?',o:['Permenaker No. 9 Tahun 2016','Permenaker No. 12/2015','Permenaker No. 38/2016','UU No. 13/2003'],a:0},
+    {q:'Tenaga kerja yang bekerja di ketinggian wajib memiliki?',o:['Tidak perlu kompetensi khusus','Sertifikat kompetensi/lisensi K3 bekerja pada ketinggian','SIM saja','Ijazah SMA'],a:1},
+    {q:'Alat pelindung jatuh yang wajib digunakan saat bekerja di ketinggian adalah?',o:['Topi biasa','Full body harness dengan lanyard terhubung ke anchor point','Sepatu olahraga','Sarung tangan tebal'],a:1},
+    {q:'Sebelum memasuki ruang terbatas (confined space), wajib dilakukan?',o:['Langsung masuk','Pengukuran kadar oksigen/gas berbahaya serta izin kerja (permit to work)','Tidak ada prosedur khusus','Menunggu perintah tanpa persiapan'],a:1},
+    {q:'Pekerjaan di ketinggian, ruang terbatas, dan pekerjaan panas termasuk kategori?',o:['Pekerjaan ringan','High risk activity yang memerlukan izin kerja khusus','Pekerjaan administratif','Tidak berisiko'],a:1},
+    {q:'Fungsi utama "anchor point" dalam pekerjaan di ketinggian adalah?',o:['Hiasan','Titik tambat kuat untuk mengaitkan lanyard/tali pengaman','Tempat istirahat','Penanda lokasi'],a:1},
+    {q:'Petugas yang mengawasi dari luar saat rekan kerja masuk ke ruang terbatas disebut?',o:['Operator','Attendant/pengawas ruang terbatas','Mandor umum','Tidak diperlukan petugas'],a:1},
+    {q:'Dokumen yang wajib dimiliki sebelum melakukan pekerjaan berisiko tinggi adalah?',o:['Tidak perlu dokumen','Surat Izin Kerja (Permit to Work/PTW)','Nota pembelian','Absensi harian'],a:1},
+    {q:'Salah satu bahaya utama di ruang terbatas adalah?',o:['Kekurangan oksigen atau gas beracun','Terlalu terang','Terlalu ramai','Tidak ada bahaya khusus'],a:0},
+    {q:'Rencana tanggap darurat (emergency response plan) untuk pekerjaan berisiko tinggi bertujuan untuk?',o:['Formalitas dokumen','Memastikan kesiapan evakuasi dan pertolongan cepat jika terjadi insiden','Tidak penting','Menambah pekerjaan administrasi'],a:1}
+  ]
+}
+];
+const PASSING_SCORE = 90;
+
+/* ============================================================
+   STATE & STORAGE (Neon Postgres via /api/records, hosted on Vercel)
+   ============================================================ */
+let RECORDS = [];
+let examSession = null; // {catId, nama, nrp, idx, answers[]}
+
+function catById(id){ return CATEGORIES.find(c=>c.id===id); }
+
+async function loadRecords(){
+  try{
+    const res = await fetch('/api/records');
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    const data = await res.json();
+    RECORDS = Array.isArray(data) ? data : [];
+  }catch(e){ console.error('Gagal memuat data dari server:', e); RECORDS = []; }
+}
+async function postRecord(rec){
+  try{
+    const res = await fetch('/api/records', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(rec)
+    });
+    if(!res.ok) throw new Error('HTTP '+res.status);
+  }catch(e){
+    console.error('Gagal menyimpan ke server:', e);
+    alert('Hasil ujian gagal disimpan ke server. Periksa koneksi internet, lalu coba kirim ulang.');
+  }
+}
+
+/* ============================================================
+   ROUTER
+   ============================================================ */
+function parseHash(){
+  const h = location.hash.replace(/^#\/?/, '');
+  const parts = h.split('/').filter(Boolean);
+  return { route: parts[0] || 'dashboard', arg: parts[1] || null };
+}
+function go(route, arg){ location.hash = arg ? `#${route}/${arg}` : `#${route}`; }
+
+window.addEventListener('hashchange', render);
+window.addEventListener('DOMContentLoaded', async ()=>{
+  await loadRecords();
+  render();
+});
+
+document.getElementById('nav').addEventListener('click', e=>{
+  const btn = e.target.closest('button[data-route]');
+  if(btn) go(btn.dataset.route);
+});
+document.getElementById('btn-export').addEventListener('click', exportPPT);
+
+function setActiveNav(route){
+  document.querySelectorAll('#nav button').forEach(b=>{
+    b.classList.toggle('active', b.dataset.route===route);
+  });
+}
+
+function render(){
+  const {route, arg} = parseHash();
+  setActiveNav(route === 'materi' || route==='ujian' ? route : 'dashboard');
+  const titleEl = document.getElementById('page-title');
+  const subEl = document.getElementById('page-sub');
+  const root = document.getElementById('view-root');
+  root.innerHTML = '';
+
+  if(route === 'materi'){
+    if(arg){ titleEl.textContent='Materi'; subEl.textContent='Modul pelatihan K3'; root.appendChild(renderMateriDetail(arg)); }
+    else{ titleEl.textContent='Menu Materi'; subEl.textContent='Modul pelatihan pencegahan cedera kerja & pekerjaan berisiko tinggi'; root.appendChild(renderMateriList()); }
+  } else if(route === 'ujian'){
+    if(arg){ titleEl.textContent='Soal Ujian'; subEl.textContent=catById(arg)? catById(arg).name : ''; root.appendChild(renderUjianFlow(arg)); }
+    else{ titleEl.textContent='Menu Soal'; subEl.textContent='Ujian per kategori — 10 soal, standar kelulusan nilai ≥ '+PASSING_SCORE; root.appendChild(renderUjianList()); }
+  } else {
+    titleEl.textContent='Dashboard'; subEl.textContent='Ringkasan pencapaian pelatihan & ujian K3';
+    root.appendChild(renderDashboard());
+  }
+}
+
+/* ============================================================
+   MATERI VIEWS
+   ============================================================ */
+function renderMateriList(){
+  const wrap = document.createElement('div');
+  const grid = document.createElement('div');
+  grid.className = 'grid materi-grid';
+  CATEGORIES.forEach(c=>{
+    const card = document.createElement('div');
+    card.className = 'materi-card';
+    card.innerHTML = `
+      <div class="ic">${c.icon}</div>
+      <h3>${c.name}</h3>
+      <p>${c.ringkas}</p>
+      <div class="reg">${c.reg}</div>`;
+    card.addEventListener('click', ()=>go('materi', c.id));
+    grid.appendChild(card);
+  });
+  wrap.appendChild(grid);
+  return wrap;
+}
+function renderMateriDetail(id){
+  const c = catById(id);
+  const wrap = document.createElement('div');
+  if(!c){ wrap.innerHTML = '<div class="empty">Materi tidak ditemukan.</div>'; return wrap; }
+  const back = document.createElement('a');
+  back.href='#materi'; back.className='back-link'; back.textContent='← Kembali ke daftar materi';
+  wrap.appendChild(back);
+
+  const head = document.createElement('div');
+  head.innerHTML = `<h2>${c.icon} ${c.name}</h2><span class="reg-tag">${c.reg}</span>`;
+  wrap.appendChild(head);
+
+  const body = document.createElement('div');
+  body.className='materi-body';
+  c.materi.forEach(block=>{
+    const b = document.createElement('div');
+    b.className='materi-block';
+    b.innerHTML = `<h4>${block.h}</h4><ul>${block.items.map(i=>`<li>${i}</li>`).join('')}</ul>`;
+    body.appendChild(b);
+  });
+  wrap.appendChild(body);
+
+  const cta = document.createElement('div');
+  cta.style.marginTop='20px';
+  cta.innerHTML = `<button class="btn btn-primary" id="cta-exam">Mulai Ujian ${c.name} →</button>`;
+  wrap.appendChild(cta);
+  cta.querySelector('#cta-exam').addEventListener('click', ()=>go('ujian', c.id));
+  return wrap;
+}
+
+/* ============================================================
+   UJIAN VIEWS
+   ============================================================ */
+function renderUjianList(){
+  const wrap = document.createElement('div');
+  const grid = document.createElement('div');
+  grid.className='grid materi-grid';
+  CATEGORIES.forEach(c=>{
+    const link = location.origin + location.pathname + '#ujian/' + c.id;
+    const card = document.createElement('div');
+    card.className='exam-card';
+    card.innerHTML = `
+      <h3>${c.icon} ${c.name}</h3>
+      <div class="meta">10 soal · kelulusan ≥ ${PASSING_SCORE}</div>
+      <div class="link-row"><input readonly value="${link}"><button class="btn btn-ghost copy-btn" style="padding:6px 10px;">Salin</button></div>
+      <div class="actions">
+        <button class="btn btn-primary start-btn" style="flex:1;">Mulai Ujian</button>
+      </div>`;
+    card.querySelector('.copy-btn').addEventListener('click', (e)=>{
+      e.stopPropagation();
+      navigator.clipboard?.writeText(link).then(()=>{
+        const b=e.target; const old=b.textContent; b.textContent='Tersalin ✓'; setTimeout(()=>b.textContent=old,1400);
+      }).catch(()=>{ card.querySelector('.link-row input').select(); });
+    });
+    card.querySelector('.start-btn').addEventListener('click', ()=>go('ujian', c.id));
+    grid.appendChild(card);
+  });
+  wrap.appendChild(grid);
+  return wrap;
+}
+
+function renderUjianFlow(id){
+  const c = catById(id);
+  const wrap = document.createElement('div');
+  if(!c){ wrap.innerHTML='<div class="empty">Ujian tidak ditemukan.</div>'; return wrap; }
+
+  if(!examSession || examSession.catId !== id || examSession.done){
+    examSession = {catId:id, nama:'', nrp:'', idx:0, answers:new Array(c.soal.length).fill(null), started:false, done:false, score:null};
+  }
+
+  if(!examSession.started){
+    wrap.appendChild(renderExamIntro(c));
+  } else if(!examSession.done){
+    wrap.appendChild(renderExamQuestion(c));
+  } else {
+    wrap.appendChild(renderExamResult(c));
+  }
+  return wrap;
+}
+
+function renderExamIntro(c){
+  const box = document.createElement('div');
+  box.className='form-box';
+  box.innerHTML = `
+    <div class="eyebrow">${c.reg}</div>
+    <h2 style="font-family:var(--font-display);font-size:26px;margin:0 0 6px;text-transform:uppercase;">${c.icon} ${c.name}</h2>
+    <p style="font-size:12.5px;color:var(--text-muted);margin:0;">10 soal pilihan ganda · Nilai kelulusan minimal <b style="color:var(--amber)">${PASSING_SCORE}</b></p>
+    <label>Nama Peserta</label>
+    <input type="text" id="in-nama" placeholder="Nama lengkap">
+    <label>NRP</label>
+    <input type="text" id="in-nrp" placeholder="Nomor Register Pegawai">
+    <button class="btn btn-primary" id="btn-start" style="margin-top:20px;width:100%;justify-content:center;">Mulai Ujian →</button>
+    <div id="err" style="color:var(--fail);font-size:12px;margin-top:8px;"></div>
+  `;
+  box.querySelector('#btn-start').addEventListener('click', ()=>{
+    const nama = box.querySelector('#in-nama').value.trim();
+    const nrp = box.querySelector('#in-nrp').value.trim();
+    if(!nama || !nrp){ box.querySelector('#err').textContent = 'Nama dan NRP wajib diisi.'; return; }
+    examSession.nama = nama; examSession.nrp = nrp; examSession.started = true;
+    render();
+  });
+  return box;
+}
+
+function renderExamQuestion(c){
+  const i = examSession.idx;
+  const q = c.soal[i];
+  const box = document.createElement('div');
+  box.className='qcard';
+  const pct = Math.round((i/(c.soal.length))*100);
+  box.innerHTML = `
+    <div class="qmeta"><span>SOAL ${i+1} / ${c.soal.length}</span><span>${examSession.nama.toUpperCase()} · ${examSession.nrp}</span></div>
+    <div class="progress-bar"><div style="width:${pct}%"></div></div>
+    <div class="qtext">${q.q}</div>
+    <div class="opts">
+      ${q.o.map((opt,oi)=>`
+        <div class="opt ${examSession.answers[i]===oi?'selected':''}" data-oi="${oi}">
+          <input type="radio" name="opt" ${examSession.answers[i]===oi?'checked':''}>
+          <label>${opt}</label>
+        </div>`).join('')}
+    </div>
+    <div style="display:flex;justify-content:space-between;margin-top:18px;">
+      <button class="btn" id="btn-prev" ${i===0?'disabled':''}>← Sebelumnya</button>
+      <button class="btn btn-primary" id="btn-next" ${examSession.answers[i]===null?'disabled':''}>${i===c.soal.length-1?'Selesai & Kirim':'Berikutnya →'}</button>
+    </div>
+  `;
+  box.querySelectorAll('.opt').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      examSession.answers[i] = parseInt(el.dataset.oi,10);
+      render();
+    });
+  });
+  box.querySelector('#btn-prev')?.addEventListener('click', ()=>{ examSession.idx--; render(); });
+  box.querySelector('#btn-next')?.addEventListener('click', async ()=>{
+    if(i === c.soal.length-1){ await finishExam(c); render(); }
+    else{ examSession.idx++; render(); }
+  });
+  return box;
+}
+
+async function finishExam(c){
+  let correct = 0;
+  c.soal.forEach((q,idx)=>{ if(examSession.answers[idx]===q.a) correct++; });
+  const score = Math.round((correct/c.soal.length)*100);
+  const lulus = score >= PASSING_SCORE;
+  const rec = {
+    id: 'r_'+Date.now()+'_'+Math.random().toString(36).slice(2,7),
+    nama: examSession.nama, nrp: examSession.nrp,
+    kategoriId: c.id, kategoriNama: c.name,
+    tanggal: new Date().toISOString().slice(0,10),
+    skor: score, lulus
+  };
+  RECORDS.push(rec);
+  await postRecord(rec);
+  examSession.done = true; examSession.score = score; examSession.lulus = lulus;
+}
+
+function renderExamResult(c){
+  const box = document.createElement('div');
+  box.className='result-box';
+  const lulus = examSession.lulus;
+  box.innerHTML = `
+    <div class="eyebrow">${c.name}</div>
+    <div class="score ${lulus?'pass-c':'fail-c'}">${examSession.score}</div>
+    <div class="stamp ${lulus?'pass':'fail'}">${lulus?'LULUS':'TIDAK LULUS'}</div>
+    <p style="color:var(--text-muted);font-size:13px;margin-top:18px;">
+      ${examSession.nama} (${examSession.nrp}) — standar kelulusan ≥ ${PASSING_SCORE}.
+      ${lulus?'Selamat, Anda dinyatakan kompeten pada materi ini.':'Silakan pelajari kembali materi dan ulangi ujian.'}
+    </p>
+    <div style="display:flex;gap:10px;justify-content:center;margin-top:18px;">
+      ${!lulus?`<button class="btn btn-primary" id="btn-retake">Ulangi Ujian</button>`:''}
+      <button class="btn" id="btn-back-materi">Kembali ke Menu Soal</button>
+    </div>
+  `;
+  box.querySelector('#btn-retake')?.addEventListener('click', ()=>{
+    examSession = null; render();
+  });
+  box.querySelector('#btn-back-materi').addEventListener('click', ()=>{
+    examSession = null; go('ujian');
+  });
+  return box;
+}
+
+/* ============================================================
+   DASHBOARD: koreksi otomatis hasil retake + charts + table
+   ============================================================ */
+function computeCounted(records){
+  // group by nama+nrp+kategori (lowercase trim)
+  const groups = {};
+  records.forEach(r=>{
+    const key = (r.nama.trim().toLowerCase())+'|'+(r.nrp.trim().toLowerCase())+'|'+r.kategoriId;
+    (groups[key] = groups[key] || []).push(r);
+  });
+  const countedIds = new Set();
+  Object.values(groups).forEach(list=>{
+    const passed = list.filter(r=>r.skor>=PASSING_SCORE);
+    if(passed.length){
+      // ambil nilai lulus tertinggi -> yang dihitung ke chart pencapaian
+      passed.sort((a,b)=>b.skor-a.skor);
+      countedIds.add(passed[0].id);
+    } else {
+      // belum pernah lulus -> hitung upaya terakhir sebagai "tidak lulus"
+      list.sort((a,b)=> a.tanggal.localeCompare(b.tanggal));
+      countedIds.add(list[list.length-1].id);
+    }
+  });
+  return countedIds;
+}
+
+function isoBar(value,max,label,colorSet,valueLabel){
+  const h = Math.max(6, Math.round((value/Math.max(max,1))*160));
+  return `<div class="iso-col">
+    <div class="iso-bar" style="--h:${h}px;--c1:${colorSet[0]};--c2:${colorSet[1]};--c3:${colorSet[2]};--c4:${colorSet[3]};">
+      <div class="bv">${valueLabel!==undefined?valueLabel:value}</div>
+      <div class="top"></div>
+      <div class="side"></div>
+      <div class="front"></div>
+    </div>
+    <div class="iso-label">${label}</div>
+  </div>`;
+}
+
+const AMBER_SET=['#ffcf70','#ffb020','#8a5c10','#ffe1a3'];
+const PASS_SET=['#5fd394','#2fae66','#155c35','#a6ecc4'];
+const FAIL_SET=['#f28b8e','#e5484d','#7a1f22','#f7c2c3'];
+
+function renderDashboard(){
+  const wrap = document.createElement('div');
+
+  const countedIds = computeCounted(RECORDS);
+
+  // ---- filters state (persisted on element via data attrs is simplest: use closures) ----
+  const state = { from:'', to:'', kategori:'', status:'' };
+
+  const filtersEl = document.createElement('div');
+  filtersEl.className='panel';
+  filtersEl.style.marginBottom='18px';
+  filtersEl.innerHTML = `
+    <div class="filters">
+      <div class="fld"><label>Dari Tanggal</label><input type="date" id="f-from"></div>
+      <div class="fld"><label>Sampai Tanggal</label><input type="date" id="f-to"></div>
+      <div class="fld"><label>Jenis Soal</label>
+        <select id="f-kat"><option value="">Semua Kategori</option>${CATEGORIES.map(c=>`<option value="${c.id}">${c.name}</option>`).join('')}</select>
+      </div>
+      <div class="fld"><label>Status</label>
+        <select id="f-status"><option value="">Semua Status</option><option value="lulus">Lulus</option><option value="tidak">Tidak Lulus</option></select>
+      </div>
+      <div class="fld"><label>&nbsp;</label><button class="btn" id="f-reset">Reset Filter</button></div>
+    </div>`;
+  wrap.appendChild(filtersEl);
+
+  const contentEl = document.createElement('div');
+  wrap.appendChild(contentEl);
+
+  function getFiltered(){
+    return RECORDS.filter(r=>{
+      if(state.from && r.tanggal < state.from) return false;
+      if(state.to && r.tanggal > state.to) return false;
+      if(state.kategori && r.kategoriId !== state.kategori) return false;
+      if(state.status === 'lulus' && !r.lulus) return false;
+      if(state.status === 'tidak' && r.lulus) return false;
+      return true;
+    });
+  }
+
+  function draw(){
+    const filtered = getFiltered();
+    const countedFiltered = computeCounted(filtered);
+    const counted = filtered.filter(r=>countedFiltered.has(r.id));
+    const totalLulus = counted.filter(r=>r.lulus).length;
+    const totalTidak = counted.filter(r=>!r.lulus).length;
+    const totalPeserta = new Set(filtered.map(r=>r.nama.trim().toLowerCase()+'|'+r.nrp.trim().toLowerCase())).size;
+    const pctLulus = counted.length? Math.round((totalLulus/counted.length)*100) : 0;
+    const maxOverall = Math.max(totalLulus, totalTidak, 1);
+
+    const perKat = CATEGORIES.map(c=>{
+      const list = counted.filter(r=>r.kategoriId===c.id);
+      return { c, lulus:list.filter(r=>r.lulus).length, tidak:list.filter(r=>!r.lulus).length };
+    });
+    const maxKat = Math.max(1, ...perKat.map(p=>Math.max(p.lulus,p.tidak)));
+
+    contentEl.innerHTML = '';
+
+    // KPI cards
+    const kpiGrid = document.createElement('div');
+    kpiGrid.className='grid kpi-row';
+    kpiGrid.style.marginBottom='22px';
+    kpiGrid.innerHTML = `
+      <div class="kpi"><div class="lbl">Total Peserta</div><div class="val">${totalPeserta}</div></div>
+      <div class="kpi"><div class="lbl">Ujian Terhitung</div><div class="val">${counted.length}</div></div>
+      <div class="kpi pass"><div class="lbl">Lulus</div><div class="val pass-c">${totalLulus}</div></div>
+      <div class="kpi fail"><div class="lbl">Tidak Lulus</div><div class="val fail-c">${totalTidak}</div></div>
+      <div class="kpi"><div class="lbl">% Kelulusan</div><div class="val" style="color:var(--amber)">${pctLulus}%</div></div>`;
+    contentEl.appendChild(kpiGrid);
+
+    // Chart 1: pencapaian keseluruhan
+    const chart1 = document.createElement('div');
+    chart1.className='panel'; chart1.style.marginBottom='18px';
+    chart1.innerHTML = `
+      <div class="chart-title">Pencapaian Kelulusan Keseluruhan</div>
+      <div class="chart-sub">Hasil terkoreksi otomatis — nilai ujian ulang di bawah ${PASSING_SCORE} tidak dihitung bila peserta sudah lulus.</div>
+      <div class="iso-wrap"><div class="iso-chart" id="chart1"></div></div>
+      <div class="legend"><div class="li"><span class="sw" style="background:var(--pass)"></span>Lulus</div><div class="li"><span class="sw" style="background:var(--fail)"></span>Tidak Lulus</div></div>`;
+    contentEl.appendChild(chart1);
+    chart1.querySelector('#chart1').innerHTML =
+      isoBar(totalLulus, maxOverall, 'LULUS', PASS_SET) +
+      isoBar(totalTidak, maxOverall, 'TIDAK LULUS', FAIL_SET);
+
+    // Chart 2: per kategori
+    const chart2 = document.createElement('div');
+    chart2.className='panel'; chart2.style.marginBottom='18px';
+    chart2.innerHTML = `
+      <div class="chart-title">Pencapaian per Kategori Soal</div>
+      <div class="chart-sub">Jumlah peserta lulus vs tidak lulus pada masing-masing modul.</div>
+      <div class="iso-wrap"><div class="iso-chart" id="chart2"></div></div>
+      <div class="legend"><div class="li"><span class="sw" style="background:var(--pass)"></span>Lulus</div><div class="li"><span class="sw" style="background:var(--fail)"></span>Tidak Lulus</div></div>`;
+    contentEl.appendChild(chart2);
+    let c2html = '';
+    perKat.forEach(p=>{
+      c2html += isoBar(p.lulus, maxKat, p.c.name.split(' ')[0], PASS_SET);
+      c2html += isoBar(p.tidak, maxKat, p.c.name.split(' ')[0]+' (TL)', FAIL_SET);
+    });
+    chart2.querySelector('#chart2').innerHTML = c2html || '<div class="empty">Belum ada data.</div>';
+
+    // Table
+    const tablePanel = document.createElement('div');
+    tablePanel.className='panel';
+    const rows = filtered.slice().sort((a,b)=> b.tanggal.localeCompare(a.tanggal));
+    tablePanel.innerHTML = `
+      <div class="section-head">
+        <div><div class="chart-title" style="margin-bottom:2px;">Data Hasil Ujian Peserta</div><div class="chart-sub" style="margin-bottom:0;">${rows.length} baris ditampilkan</div></div>
+      </div>
+      <div style="overflow-x:auto;">
+      <table class="data-table">
+        <thead><tr><th>Nama</th><th>NRP</th><th>Tanggal Ujian</th><th>Jenis Ujian</th><th>Nilai</th><th>Status</th><th>Perhitungan</th></tr></thead>
+        <tbody>
+        ${rows.length? rows.map(r=>`
+          <tr>
+            <td style="font-family:var(--font-body);">${escapeHtml(r.nama)}</td>
+            <td>${escapeHtml(r.nrp)}</td>
+            <td>${r.tanggal}</td>
+            <td style="font-family:var(--font-body);">${r.kategoriNama}</td>
+            <td>${r.skor}</td>
+            <td><span class="badge ${r.lulus?'pass':'fail'}">${r.lulus?'Lulus':'Tidak Lulus'}</span></td>
+            <td>${countedFiltered.has(r.id)?'<span class="badge pass" style="background:transparent;">Dihitung</span>':'<span class="badge muted">Diabaikan (retake)</span>'}</td>
+          </tr>`).join('') : `<tr><td colspan="7"><div class="empty">Belum ada data ujian pada rentang filter ini.</div></td></tr>`}
+        </tbody>
+      </table>
+      </div>`;
+    contentEl.appendChild(tablePanel);
+  }
+
+  filtersEl.querySelector('#f-from').addEventListener('change', e=>{ state.from=e.target.value; draw(); });
+  filtersEl.querySelector('#f-to').addEventListener('change', e=>{ state.to=e.target.value; draw(); });
+  filtersEl.querySelector('#f-kat').addEventListener('change', e=>{ state.kategori=e.target.value; draw(); });
+  filtersEl.querySelector('#f-status').addEventListener('change', e=>{ state.status=e.target.value; draw(); });
+  filtersEl.querySelector('#f-reset').addEventListener('click', ()=>{
+    state.from=''; state.to=''; state.kategori=''; state.status='';
+    filtersEl.querySelector('#f-from').value=''; filtersEl.querySelector('#f-to').value='';
+    filtersEl.querySelector('#f-kat').value=''; filtersEl.querySelector('#f-status').value='';
+    draw();
+  });
+
+  draw();
+  window.__dashboardGetData = ()=>{
+    const filtered = getFiltered();
+    const countedFiltered = computeCounted(filtered);
+    return { filtered, countedFiltered };
+  };
+  return wrap;
+}
+
+function escapeHtml(s){ return (s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+/* ============================================================
+   EXPORT TO PPT (elegant themed deck, native 3D bar charts)
+   ============================================================ */
+async function exportPPT(){
+  const btn = document.getElementById('btn-export');
+  const oldTxt = btn.textContent; btn.textContent='Membuat PPT…'; btn.disabled=true;
+  try{
+    const data = window.__dashboardGetData ? window.__dashboardGetData() : { filtered:RECORDS, countedFiltered:computeCounted(RECORDS) };
+    const filtered = data.filtered;
+    const countedIds = data.countedFiltered;
+    const counted = filtered.filter(r=>countedIds.has(r.id));
+    const totalLulus = counted.filter(r=>r.lulus).length;
+    const totalTidak = counted.filter(r=>!r.lulus).length;
+    const totalPeserta = new Set(filtered.map(r=>r.nama.trim().toLowerCase()+'|'+r.nrp.trim().toLowerCase())).size;
+    const pct = counted.length ? Math.round((totalLulus/counted.length)*100) : 0;
+
+    const NAVY='10151C', PANEL='161E28', AMBER='FFB020', GREEN='2FAE66', RED='E5484D', TEXT='EDEFF3', MUTED='8A94A3';
+
+    const pptx = new PptxGenJS();
+    pptx.defineLayout({ name:'WIDE', width:13.33, height:7.5 });
+    pptx.layout = 'WIDE';
+
+    // ---- Slide 1: Cover ----
+    let s = pptx.addSlide();
+    s.background = { color: NAVY };
+    s.addShape('rect', { x:0, y:0, w:13.33, h:0.18, fill:{ color:AMBER } });
+    s.addText('SIGAP K3', { x:0.6, y:2.2, w:8, h:0.9, fontFace:'Arial Black', fontSize:40, color:AMBER, bold:true });
+    s.addText('DASHBOARD PELATIHAN & UJIAN KESELAMATAN KERJA', { x:0.6, y:3.0, w:10.5, h:0.6, fontFace:'Arial', fontSize:20, color:TEXT, bold:true });
+    s.addText('Hand & Finger Injury · Power Tools · Lifting · Electrical · Welding · High Risk Activity', { x:0.6, y:3.6, w:10.5, h:0.5, fontFace:'Arial', fontSize:13, color:MUTED, italic:true });
+    s.addText('Dicetak: ' + new Date().toLocaleDateString('id-ID',{day:'2-digit',month:'long',year:'numeric'}), { x:0.6, y:6.7, w:6, h:0.4, fontFace:'Arial', fontSize:11, color:MUTED });
+
+    // ---- Slide 2: Ringkasan ----
+    s = pptx.addSlide(); s.background={color:NAVY};
+    s.addShape('rect', { x:0, y:0, w:13.33, h:0.12, fill:{color:AMBER} });
+    s.addText('RINGKASAN PENCAPAIAN', { x:0.5, y:0.35, w:8, h:0.6, fontFace:'Arial', fontSize:26, color:TEXT, bold:true });
+    const kpis = [
+      ['Total Peserta', String(totalPeserta), TEXT],
+      ['Ujian Terhitung', String(counted.length), TEXT],
+      ['Lulus', String(totalLulus), GREEN],
+      ['Tidak Lulus', String(totalTidak), RED],
+      ['% Kelulusan', pct+'%', AMBER],
+    ];
+    let kx = 0.5;
+    kpis.forEach(([lbl,val,col])=>{
+      s.addShape('roundRect', { x:kx, y:1.3, w:2.3, h:1.5, fill:{color:PANEL}, line:{color:'2C3644',width:1}, rectRadius:0.08 });
+      s.addText(val, { x:kx, y:1.5, w:2.3, h:0.8, align:'center', fontFace:'Arial', fontSize:32, bold:true, color:col });
+      s.addText(lbl.toUpperCase(), { x:kx, y:2.25, w:2.3, h:0.4, align:'center', fontFace:'Arial', fontSize:10, color:MUTED });
+      kx += 2.5;
+    });
+
+    // ---- Slide 3: Chart 3D pencapaian keseluruhan ----
+    s = pptx.addSlide(); s.background={color:NAVY};
+    s.addShape('rect', { x:0, y:0, w:13.33, h:0.12, fill:{color:AMBER} });
+    s.addText('PENCAPAIAN KELULUSAN KESELURUHAN', { x:0.5, y:0.35, w:10, h:0.5, fontFace:'Arial', fontSize:22, color:TEXT, bold:true });
+    s.addChart(pptx.ChartType.bar3D, [
+      { name:'Jumlah Peserta', labels:['Lulus','Tidak Lulus'], values:[totalLulus, totalTidak] }
+    ], {
+      x:1.2, y:1.2, w:10.9, h:5.6,
+      barDir:'col', chartColors:[GREEN, RED], showLegend:false, showValue:true,
+      dataLabelColor:TEXT, catAxisLabelColor:TEXT, valAxisLabelColor:MUTED,
+      chartArea:{fill:{color:NAVY}}, plotArea:{fill:{color:NAVY}},
+      catAxisLineColor:'2C3644', valAxisLineColor:'2C3644', valGridLine:{color:'2C3644'}
+    });
+
+    // ---- Slide 4: Chart 3D per kategori ----
+    const catLabels = CATEGORIES.map(c=>c.name.split(' ').slice(0,2).join(' '));
+    const catLulus = CATEGORIES.map(c=> counted.filter(r=>r.kategoriId===c.id && r.lulus).length);
+    const catTidak = CATEGORIES.map(c=> counted.filter(r=>r.kategoriId===c.id && !r.lulus).length);
+    s = pptx.addSlide(); s.background={color:NAVY};
+    s.addShape('rect', { x:0, y:0, w:13.33, h:0.12, fill:{color:AMBER} });
+    s.addText('PENCAPAIAN PER KATEGORI SOAL', { x:0.5, y:0.35, w:10, h:0.5, fontFace:'Arial', fontSize:22, color:TEXT, bold:true });
+    s.addChart(pptx.ChartType.bar3D, [
+      { name:'Lulus', labels:catLabels, values:catLulus },
+      { name:'Tidak Lulus', labels:catLabels, values:catTidak }
+    ], {
+      x:0.6, y:1.2, w:12.1, h:5.6,
+      barDir:'col', barGrouping:'clustered', chartColors:[GREEN, RED], showLegend:true, legendColor:TEXT,
+      dataLabelColor:TEXT, catAxisLabelColor:TEXT, valAxisLabelColor:MUTED, catAxisLabelFontSize:10,
+      chartArea:{fill:{color:NAVY}}, plotArea:{fill:{color:NAVY}},
+      catAxisLineColor:'2C3644', valAxisLineColor:'2C3644', valGridLine:{color:'2C3644'}
+    });
+
+    // ---- Slide(s) 5+: Tabel hasil ujian ----
+    const rows = filtered.slice().sort((a,b)=> b.tanggal.localeCompare(a.tanggal));
+    const header = [['Nama','NRP','Tanggal','Jenis Ujian','Nilai','Status'].map(t=>({text:t, options:{bold:true, color:'10151C', fill:{color:AMBER}, fontSize:10}}))];
+    const chunk = 16;
+    for(let i=0; i<Math.max(rows.length,1); i+=chunk){
+      const part = rows.slice(i, i+chunk);
+      s = pptx.addSlide(); s.background={color:NAVY};
+      s.addShape('rect', { x:0, y:0, w:13.33, h:0.12, fill:{color:AMBER} });
+      s.addText('DATA HASIL UJIAN PESERTA'+(rows.length>chunk?` (${Math.floor(i/chunk)+1})`:''), { x:0.5, y:0.3, w:10, h:0.5, fontFace:'Arial', fontSize:20, color:TEXT, bold:true });
+      const body = part.length ? part.map(r=>[
+        {text:r.nama, options:{color:TEXT, fontSize:10}},
+        {text:r.nrp, options:{color:TEXT, fontSize:10}},
+        {text:r.tanggal, options:{color:TEXT, fontSize:10}},
+        {text:r.kategoriNama, options:{color:TEXT, fontSize:10}},
+        {text:String(r.skor), options:{color:TEXT, fontSize:10}},
+        {text:r.lulus?'LULUS':'TIDAK LULUS', options:{color:r.lulus?GREEN:RED, fontSize:10, bold:true}},
+      ]) : [[{text:'Belum ada data.', options:{color:MUTED, fontSize:11, colspan:6}}]];
+      s.addTable(header.concat(body), { x:0.5, y:1.0, w:12.3, autoPage:false, border:{type:'solid', color:'2C3644', pt:0.5}, fill:{color:PANEL} });
+    }
+
+    await pptx.writeFile({ fileName:'Dashboard_K3_Training.pptx' });
+  }catch(err){
+    console.error(err);
+    alert('Gagal membuat file PPT: ' + err.message);
+  }finally{
+    btn.textContent = oldTxt; btn.disabled=false;
+  }
+}
+</script>
+</body>
+</html>
