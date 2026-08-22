@@ -245,10 +245,6 @@ table.data-table tbody tr:hover{background:var(--bg-panel-2);}
         <h1 id="page-title">Dashboard</h1>
         <div class="sub" id="page-sub">Ringkasan pencapaian pelatihan &amp; ujian K3</div>
       </div>
-      <div style="display:flex;gap:10px;">
-        <button class="btn" id="btn-export-word">📄 Export ke Word</button>
-        <button class="btn" id="btn-export">⇩ Export ke PPT</button>
-      </div>
     </header>
     <main class="view" id="view-root"></main>
   </div>
@@ -511,6 +507,10 @@ const CATEGORIES = [
 }
 ];
 const PASSING_SCORE = 90;
+const DASHBOARD_ADMIN_NAME = 'Andi Wiratmoko';
+const DASHBOARD_ADMIN_NRP = 'KB17161';
+const AUTH_KEY = 'sigap_k3_dash_auth_v1';
+function isDashAuthorized(){ return sessionStorage.getItem(AUTH_KEY) === '1'; }
 
 /* ============================================================
    STATE & STORAGE (Neon Postgres via /api/records, hosted on Vercel)
@@ -525,7 +525,10 @@ async function loadRecords(){
     const res = await fetch('/api/records');
     if(!res.ok) throw new Error('HTTP '+res.status);
     const data = await res.json();
-    RECORDS = Array.isArray(data) ? data : [];
+    RECORDS = Array.isArray(data) ? data.map(r=>({
+      ...r,
+      jawaban: (()=>{ try{ return r.jawaban ? (typeof r.jawaban==='string' ? JSON.parse(r.jawaban) : r.jawaban) : null; }catch(e){ return null; } })()
+    })) : [];
   }catch(e){ console.error('Gagal memuat data dari server:', e); RECORDS = []; }
 }
 async function postRecord(rec){
@@ -562,8 +565,6 @@ document.getElementById('nav').addEventListener('click', e=>{
   const btn = e.target.closest('button[data-route]');
   if(btn) go(btn.dataset.route);
 });
-document.getElementById('btn-export').addEventListener('click', exportPPT);
-document.getElementById('btn-export-word').addEventListener('click', exportWord);
 
 function setActiveNav(route){
   document.querySelectorAll('#nav button').forEach(b=>{
@@ -586,9 +587,45 @@ function render(){
     if(arg){ titleEl.textContent='Soal Ujian'; subEl.textContent=catById(arg)? catById(arg).name : ''; root.appendChild(renderUjianFlow(arg)); }
     else{ titleEl.textContent='Menu Soal'; subEl.textContent='Ujian per kategori — 10 soal, standar kelulusan nilai ≥ '+PASSING_SCORE; root.appendChild(renderUjianList()); }
   } else {
-    titleEl.textContent='Dashboard'; subEl.textContent='Ringkasan pencapaian pelatihan & ujian K3';
-    root.appendChild(renderDashboard());
+    if(isDashAuthorized()){
+      titleEl.textContent='Dashboard'; subEl.textContent='Ringkasan pencapaian pelatihan & ujian K3';
+      root.appendChild(renderDashboard());
+    } else {
+      titleEl.textContent='Dashboard'; subEl.textContent='Akses terbatas';
+      root.appendChild(renderDashboardGate());
+    }
   }
+}
+
+function renderDashboardGate(){
+  const wrap = document.createElement('div');
+  const box = document.createElement('div');
+  box.className='form-box';
+  box.innerHTML = `
+    <div class="eyebrow">Akses Terbatas</div>
+    <h2 style="font-family:var(--font-display);font-size:24px;margin:0 0 6px;text-transform:uppercase;">🔒 Dashboard Terkunci</h2>
+    <p style="font-size:12.5px;color:var(--text-muted);margin:0;">Dashboard hanya dapat diakses oleh penanggung jawab yang berwenang. Masukkan nama dan NRP untuk melanjutkan.</p>
+    <label>Nama</label>
+    <input type="text" id="gate-nama" placeholder="Nama lengkap">
+    <label>NRP</label>
+    <input type="text" id="gate-nrp" placeholder="NRP">
+    <button class="btn btn-primary" id="gate-submit" style="margin-top:20px;width:100%;justify-content:center;">Masuk →</button>
+    <div id="gate-err" style="color:var(--fail);font-size:12px;margin-top:8px;"></div>
+  `;
+  function submit(){
+    const nama = box.querySelector('#gate-nama').value.trim();
+    const nrp = box.querySelector('#gate-nrp').value.trim();
+    if(nama.toLowerCase() === DASHBOARD_ADMIN_NAME.toLowerCase() && nrp.toLowerCase() === DASHBOARD_ADMIN_NRP.toLowerCase()){
+      sessionStorage.setItem(AUTH_KEY, '1');
+      render();
+    } else {
+      box.querySelector('#gate-err').textContent = 'Nama atau NRP tidak sesuai. Akses ditolak.';
+    }
+  }
+  box.querySelector('#gate-submit').addEventListener('click', submit);
+  box.querySelectorAll('input').forEach(inp=> inp.addEventListener('keydown', e=>{ if(e.key==='Enter') submit(); }));
+  wrap.appendChild(box);
+  return wrap;
 }
 
 /* ============================================================
@@ -762,7 +799,8 @@ async function finishExam(c){
     nama: examSession.nama, nrp: examSession.nrp,
     kategoriId: c.id, kategoriNama: c.name,
     tanggal: new Date().toISOString().slice(0,10),
-    skor: score, lulus
+    skor: score, lulus,
+    jawaban: examSession.answers.slice()
   };
   RECORDS.push(rec);
   await postRecord(rec);
@@ -943,6 +981,11 @@ function renderDashboard(){
     tablePanel.innerHTML = `
       <div class="section-head">
         <div><div class="chart-title" style="margin-bottom:2px;">Data Hasil Ujian Peserta</div><div class="chart-sub" style="margin-bottom:0;">${rows.length} baris ditampilkan</div></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="btn" id="btn-export-word" style="font-size:12px;padding:8px 12px;">📄 Export Word</button>
+          <button class="btn" id="btn-export-ppt" style="font-size:12px;padding:8px 12px;">⇩ Export PPT</button>
+          <button class="btn btn-ghost" id="btn-lock-dash" style="font-size:12px;padding:8px 12px;" title="Keluar dari Dashboard">🔒 Kunci</button>
+        </div>
       </div>
       <div style="overflow-x:auto;">
       <table class="data-table">
@@ -962,6 +1005,12 @@ function renderDashboard(){
       </table>
       </div>`;
     contentEl.appendChild(tablePanel);
+    tablePanel.querySelector('#btn-export-word').addEventListener('click', exportWord);
+    tablePanel.querySelector('#btn-export-ppt').addEventListener('click', exportPPT);
+    tablePanel.querySelector('#btn-lock-dash').addEventListener('click', ()=>{
+      sessionStorage.removeItem(AUTH_KEY);
+      render();
+    });
   }
 
   filtersEl.querySelector('#f-from').addEventListener('change', e=>{ state.from=e.target.value; draw(); });
@@ -990,7 +1039,7 @@ function escapeHtml(s){ return (s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':
    EXPORT TO PPT (elegant themed deck, native 3D bar charts)
    ============================================================ */
 async function exportPPT(){
-  const btn = document.getElementById('btn-export');
+  const btn = document.getElementById('btn-export-ppt');
   const oldTxt = btn.textContent; btn.textContent='Membuat PPT…'; btn.disabled=true;
   try{
     if(typeof PptxGenJS === 'undefined'){
@@ -1183,59 +1232,97 @@ async function exportWord(){
 
     const today = new Date().toLocaleDateString('id-ID', { day:'2-digit', month:'long', year:'numeric' });
 
-    // ---- Halaman 1: Lampiran daftar nilai seluruh peserta ----
-    const tableHeaderCells = ['No','Nama','NRP','Jenis Ujian','Tanggal Ujian','Nilai','Status'];
-    const headRow = new TableRow({
-      tableHeader:true,
-      children: tableHeaderCells.map(t=> new TableCell({
-        borders:GRIDBORDER, shading:{ type:ShadingType.CLEAR, color:'auto', fill:'1B2431' }, verticalAlign:VerticalAlign.CENTER,
-        children:[ new Paragraph({ alignment:AlignmentType.CENTER, children:[ new TextRun({ text:t, bold:true, color:'FFFFFF', size:18 }) ] }) ]
-      }))
+    // ---- Lembar soal & jawaban untuk setiap peserta per materi ujian ----
+    const children = [];
+    rows.forEach((r, idx)=>{
+      if(idx>0) children.push(new Paragraph({ children:[ new docx.PageBreak() ] }));
+      const cat = catById(r.kategoriId);
+
+      children.push(letterhead('Lembar Jawaban Ujian Kompetensi K3'));
+      children.push(hr());
+      children.push(new Paragraph({ alignment:AlignmentType.CENTER, spacing:{ after:40 }, children:[ new TextRun({ text:'LEMBAR SOAL & JAWABAN UJIAN', bold:true, size:26 }) ] }));
+      children.push(new Paragraph({ alignment:AlignmentType.CENTER, spacing:{ after:220 }, children:[ new TextRun({ text:r.kategoriNama, bold:true, size:21, color:'8A5C10' }) ] }));
+
+      // info peserta
+      const infoRows = [
+        ['Nama Lengkap', r.nama], ['NRP', r.nrp],
+        ['Tanggal Ujian', r.tanggal], ['Nilai Akhir', String(r.skor)+' / 100'],
+        ['Status', r.lulus?'LULUS':'TIDAK LULUS']
+      ];
+      children.push(new Table({
+        width:{size:100,type:WidthType.PERCENTAGE}, borders:NOBORDER,
+        rows: infoRows.map(([k,v])=> new TableRow({ children:[
+          new TableCell({ width:{size:24,type:WidthType.PERCENTAGE}, borders:NOBORDER, children:[ new Paragraph({ children:[ new TextRun({ text:k, bold:true, size:19 }) ] }) ] }),
+          new TableCell({ width:{size:76,type:WidthType.PERCENTAGE}, borders:NOBORDER, children:[ new Paragraph({ children:[
+            new TextRun({ text:': '+v, size:19, bold:(k==='Status'), color: k==='Status' ? (r.lulus?'1F7A43':'B3261E') : '000000' })
+          ] }) ] }),
+        ] }))
+      }));
+      children.push(new Paragraph({ text:'', spacing:{ after:200 } }));
+
+      if(cat && Array.isArray(r.jawaban)){
+        cat.soal.forEach((q,qi)=>{
+          const chosen = r.jawaban[qi];
+          children.push(new Paragraph({ spacing:{ before:120, after:60 }, children:[ new TextRun({ text:(qi+1)+'. '+q.q, bold:true, size:20 }) ] }));
+          q.o.forEach((opt,oi)=>{
+            const isCorrect = oi===q.a;
+            const isChosenWrong = oi===chosen && chosen!==q.a;
+            let prefix = '     ';
+            let mark = '';
+            let color = '333333';
+            let bold = false;
+            if(isCorrect){ prefix='  ✓  '; mark=' (Jawaban Benar)'; color='1F7A43'; bold=true; }
+            if(isChosenWrong){ prefix='  ✗  '; mark=' (Jawaban Peserta — Salah)'; color='B3261E'; bold=true; }
+            if(oi===chosen && chosen===q.a){ mark=' (Jawaban Benar — Dipilih Peserta)'; }
+            children.push(new Paragraph({ indent:{ left:300 }, spacing:{ after:20 }, children:[
+              new TextRun({ text:prefix+String.fromCharCode(97+oi)+'. '+opt+mark, size:19, color, bold })
+            ] }));
+          });
+        });
+      } else {
+        children.push(new Paragraph({ children:[ new TextRun({ text:'Rincian soal & jawaban tidak tersedia untuk data ini (dicatat sebelum fitur rincian jawaban aktif). Nilai akhir tetap: '+r.skor, italics:true, size:19, color:'888888' }) ] }));
+      }
+
+      children.push(new Paragraph({ text:'', spacing:{ after:280 } }));
+      children.push(signatureBlock(today));
     });
-    const bodyRows = rows.map((r,i)=> new TableRow({ children:[
-      new TableCell({ borders:GRIDBORDER, children:[ new Paragraph({ alignment:AlignmentType.CENTER, children:[ new TextRun({ text:String(i+1), size:18 }) ] }) ] }),
-      new TableCell({ borders:GRIDBORDER, children:[ new Paragraph({ children:[ new TextRun({ text:r.nama, size:18 }) ] }) ] }),
-      new TableCell({ borders:GRIDBORDER, children:[ new Paragraph({ children:[ new TextRun({ text:r.nrp, size:18 }) ] }) ] }),
-      new TableCell({ borders:GRIDBORDER, children:[ new Paragraph({ children:[ new TextRun({ text:r.kategoriNama, size:18 }) ] }) ] }),
-      new TableCell({ borders:GRIDBORDER, children:[ new Paragraph({ alignment:AlignmentType.CENTER, children:[ new TextRun({ text:r.tanggal, size:18 }) ] }) ] }),
-      new TableCell({ borders:GRIDBORDER, children:[ new Paragraph({ alignment:AlignmentType.CENTER, children:[ new TextRun({ text:String(r.skor), bold:true, size:18 }) ] }) ] }),
-      new TableCell({ borders:GRIDBORDER, shading:{ type:ShadingType.CLEAR, color:'auto', fill:r.lulus?'E4F5EA':'FBE7E7' }, children:[ new Paragraph({ alignment:AlignmentType.CENTER, children:[ new TextRun({ text:r.lulus?'LULUS':'TIDAK LULUS', bold:true, color:r.lulus?'1F7A43':'B3261E', size:18 }) ] }) ] }),
-    ] }));
-    const resultsTable = new Table({ width:{size:100,type:WidthType.PERCENTAGE}, rows:[headRow, ...bodyRows] });
 
-    const children = [
-      letterhead('Lampiran Hasil Ujian & Nilai Peserta — Kompetensi K3'),
-      hr(),
-      new Paragraph({ alignment:AlignmentType.CENTER, spacing:{ after:60 }, children:[ new TextRun({ text:'LAMPIRAN HASIL UJIAN KOMPETENSI K3', bold:true, size:26 }) ] }),
-      new Paragraph({ alignment:AlignmentType.CENTER, spacing:{ after:260 }, children:[ new TextRun({ text:'Tanggal Cetak: '+today, size:19, color:'555555' }) ] }),
-      resultsTable,
-      new Paragraph({ text:'', spacing:{ after:360 } }),
-      signatureBlock(today),
-    ];
-
-    // ---- Halaman sertifikat kelulusan per peserta yang lulus ----
+    // ---- Halaman sertifikat kelulusan premium (motif hijau lingkungan & keselamatan) untuk peserta yang lulus ----
     const lulusRows = rows.filter(r=>r.lulus);
+    const MOTIF = '🌿  🦺  ✅  ⚠️  🌿';
     lulusRows.forEach((r)=>{
       children.push(new Paragraph({ children:[ new docx.PageBreak() ] }));
-      const certCell = new TableCell({
-        borders:{ top:{style:BorderStyle.DOUBLE,size:14,color:'C9A227'}, bottom:{style:BorderStyle.DOUBLE,size:14,color:'C9A227'}, left:{style:BorderStyle.DOUBLE,size:14,color:'C9A227'}, right:{style:BorderStyle.DOUBLE,size:14,color:'C9A227'} },
-        margins:{ top:400, bottom:400, left:500, right:500 },
+
+      const innerCell = new TableCell({
+        shading:{ type:ShadingType.CLEAR, color:'auto', fill:'FBF8EF' },
+        borders:{ top:{style:BorderStyle.SINGLE,size:8,color:'C9A227'}, bottom:{style:BorderStyle.SINGLE,size:8,color:'C9A227'}, left:{style:BorderStyle.SINGLE,size:8,color:'C9A227'}, right:{style:BorderStyle.SINGLE,size:8,color:'C9A227'} },
+        margins:{ top:360, bottom:360, left:500, right:500 },
         children:[
-          letterhead('Sertifikat Kelulusan Uji Kompetensi K3'),
-          new Paragraph({ text:'', spacing:{ after:200 } }),
-          new Paragraph({ alignment:AlignmentType.CENTER, children:[ new TextRun({ text:'SERTIFIKAT KELULUSAN', bold:true, size:36, color:'8A5C10' }) ] }),
-          new Paragraph({ alignment:AlignmentType.CENTER, spacing:{ after:260 }, children:[ new TextRun({ text:'Diberikan kepada:', italics:true, size:20 }) ] }),
-          new Paragraph({ alignment:AlignmentType.CENTER, children:[ new TextRun({ text:r.nama.toUpperCase(), bold:true, size:34 }) ] }),
-          new Paragraph({ alignment:AlignmentType.CENTER, spacing:{ after:260 }, children:[ new TextRun({ text:'NRP: '+r.nrp, size:20 }) ] }),
-          new Paragraph({ alignment:AlignmentType.CENTER, spacing:{ after:60 }, children:[ new TextRun({ text:'Telah dinyatakan LULUS pada Ujian Kompetensi K3 dengan materi:', size:20 }) ] }),
-          new Paragraph({ alignment:AlignmentType.CENTER, spacing:{ after:260 }, children:[ new TextRun({ text:r.kategoriNama, bold:true, size:26, color:'1F7A43' }) ] }),
+          new Paragraph({ alignment:AlignmentType.CENTER, spacing:{ after:80 }, children:[ new TextRun({ text:MOTIF, size:22 }) ] }),
+          new Paragraph({ alignment:AlignmentType.CENTER, children:[ new TextRun({ text:'SERTIFIKAT KELULUSAN', bold:true, size:40, color:'1F7A43' }) ] }),
+          new Paragraph({ alignment:AlignmentType.CENTER, spacing:{ after:220 }, children:[ new TextRun({ text:'KESELAMATAN, KESEHATAN KERJA & LINGKUNGAN (K3L)', bold:true, size:16, color:'2FAE66' }) ] }),
+          new Paragraph({ alignment:AlignmentType.CENTER, spacing:{ after:200 }, children:[ new TextRun({ text:'Dengan bangga diberikan kepada:', italics:true, size:20, color:'555555' }) ] }),
+          new Paragraph({ alignment:AlignmentType.CENTER, children:[ new TextRun({ text:r.nama.toUpperCase(), bold:true, size:38, color:'1B2431' }) ] }),
+          new Paragraph({ alignment:AlignmentType.CENTER, spacing:{ after:220 }, children:[ new TextRun({ text:'NRP: '+r.nrp, size:20, color:'555555' }) ] }),
+          new Paragraph({ alignment:AlignmentType.CENTER, spacing:{ after:40 }, children:[ new TextRun({ text:'Telah dinyatakan LULUS pada Ujian Kompetensi K3 dengan materi:', size:20 }) ] }),
+          new Paragraph({ alignment:AlignmentType.CENTER, spacing:{ after:220 }, children:[ new TextRun({ text:r.kategoriNama, bold:true, size:28, color:'1F7A43' }) ] }),
           new Paragraph({ alignment:AlignmentType.CENTER, children:[ new TextRun({ text:'Nilai: '+r.skor+' / 100', bold:true, size:22 }) ] }),
           new Paragraph({ alignment:AlignmentType.CENTER, spacing:{ after:60 }, children:[ new TextRun({ text:'Tanggal Ujian: '+r.tanggal, size:20 }) ] }),
-          new Paragraph({ alignment:AlignmentType.CENTER, spacing:{ after:420 }, children:[ new TextRun({ text:'No. Sertifikat: CERT-'+r.id.toUpperCase().slice(0,14), size:14, color:'888888' }) ] }),
+          new Paragraph({ alignment:AlignmentType.CENTER, spacing:{ after:100 }, children:[ new TextRun({ text:'Sertifikat ini menegaskan komitmen terhadap Keselamatan Kerja dan Kelestarian Lingkungan', italics:true, size:15, color:'2FAE66' }) ] }),
+          new Paragraph({ alignment:AlignmentType.CENTER, spacing:{ after:360 }, children:[ new TextRun({ text:'No. Sertifikat: CERT-'+r.id.toUpperCase().slice(0,14), size:14, color:'888888' }) ] }),
           signatureBlock(today),
         ]
       });
-      children.push(new Table({ width:{size:100,type:WidthType.PERCENTAGE}, rows:[ new TableRow({ children:[certCell] }) ] }));
+      const outerCell = new TableCell({
+        borders:{ top:{style:BorderStyle.DOUBLE,size:20,color:'2FAE66'}, bottom:{style:BorderStyle.DOUBLE,size:20,color:'2FAE66'}, left:{style:BorderStyle.DOUBLE,size:20,color:'2FAE66'}, right:{style:BorderStyle.DOUBLE,size:20,color:'2FAE66'} },
+        margins:{ top:200, bottom:200, left:200, right:200 },
+        children:[
+          letterhead('Sertifikat Kelulusan Uji Kompetensi K3'),
+          new Paragraph({ text:'', spacing:{ after:80 } }),
+          new Table({ width:{size:100,type:WidthType.PERCENTAGE}, rows:[ new TableRow({ children:[innerCell] }) ] }),
+        ]
+      });
+      children.push(new Table({ width:{size:100,type:WidthType.PERCENTAGE}, rows:[ new TableRow({ children:[outerCell] }) ] }));
     });
 
     const doc = new Document({
@@ -1245,7 +1332,7 @@ async function exportWord(){
     const blob = await Packer.toBlob(doc);
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    a.href = url; a.download = 'Lampiran_Ujian_Sertifikat_K3.docx';
+    a.href = url; a.download = 'Lembar_Jawaban_Sertifikat_K3.docx';
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
     URL.revokeObjectURL(url);
   }catch(err){
